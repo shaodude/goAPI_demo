@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/akhil/go-fiber-postgres/models"
-	"github.com/akhil/go-fiber-postgres/storage"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
+	"github.com/shaodude/goAPI_demo/models"
+	"github.com/shaodude/goAPI_demo/storage"
 	"gorm.io/gorm"
 )
 
