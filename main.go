@@ -31,27 +31,61 @@ type Repository struct {
 	DB *gorm.DB
 }
 
-func (r *Repository) RegisterStudent(context *fiber.Ctx) error {
-	student := Student{}
+func (r *Repository) Register(context *fiber.Ctx) error {
+	// student := Student{}
 
-	err := context.BodyParser(&student)
+	// err := context.BodyParser(&student)
 
-	if err != nil {
-		context.Status(http.StatusUnprocessableEntity).JSON(
-			&fiber.Map{"message": "request failed"})
-		return err
+	// if err != nil {
+	// 	context.Status(http.StatusUnprocessableEntity).JSON(
+	// 		&fiber.Map{"message": "request failed"})
+	// 	return err
+	// }
+
+	// err = r.DB.Create(&student).Error
+	// if err != nil {
+	// 	context.Status(http.StatusBadRequest).JSON(
+	// 		&fiber.Map{"message": "could not register student"})
+	// 	return err
+	// }
+
+	// context.Status(http.StatusOK).JSON(&fiber.Map{
+	// 	"message": "student has been registered"})
+	// return nil
+	// Parse request body
+	var requestBody struct {
+		Teacher  string   `json:"teacher"`
+		Students []string `json:"students"`
+	}
+	if err := context.BodyParser(&requestBody); err != nil {
+		return context.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
 	}
 
-	err = r.DB.Create(&student).Error
-	if err != nil {
-		context.Status(http.StatusBadRequest).JSON(
-			&fiber.Map{"message": "could not register student"})
-		return err
+	// Fetch teacher from database
+	var teacher models.Teacher
+	if err := r.DB.Where("email = ?", requestBody.Teacher).First(&teacher).Error; err != nil {
+		return context.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "teacher not found"})
 	}
 
-	context.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "student has been registered"})
-	return nil
+	// Fetch or create students and associate them with the teacher
+	for _, studentEmail := range requestBody.Students {
+		var student models.Student
+		if err := r.DB.Where("email = ?", studentEmail).First(&student).Error; err != nil {
+			// If student not found, create a new student
+			student = models.Student{Email: studentEmail}
+			if err := r.DB.Create(&student).Error; err != nil {
+				return context.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to create student"})
+			}
+		}
+
+		// Associate student with the teacher
+		if err := r.DB.Model(&teacher).Association("Students").Append(&student); err != nil {
+			return context.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to register student"})
+		}
+	}
+
+	// Return success response
+	return context.SendStatus(fiber.StatusNoContent)
 }
 
 func (r *Repository) CreateBook(context *fiber.Ctx) error {
@@ -147,7 +181,7 @@ func (r *Repository) GetBookByID(context *fiber.Ctx) error {
 func (r *Repository) SetupRoutes(app *fiber.App) {
 	api := app.Group("/api")
 	api.Post("/create_books", r.CreateBook)
-	api.Post("/register_students", r.RegisterStudent)
+	api.Post("/register", r.Register)
 	api.Delete("delete_book/:id", r.DeleteBook)
 	api.Get("/get_books/:id", r.GetBookByID)
 	api.Get("/books", r.GetBooks)
@@ -173,6 +207,18 @@ func main() {
 		log.Fatal("could not load the database")
 	}
 	err = models.MigrateBooks(db)
+	if err != nil {
+		log.Fatal("could not migrate db")
+	}
+	err = models.MigrateStudents(db)
+	if err != nil {
+		log.Fatal("could not migrate students db")
+	}
+	err = models.MigrateTeachers(db)
+	if err != nil {
+		log.Fatal("could not migrate teachers db")
+	}
+	err = models.MigrateTables(db)
 	if err != nil {
 		log.Fatal("could not migrate db")
 	}
