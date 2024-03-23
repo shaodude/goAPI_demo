@@ -19,14 +19,26 @@ type Book struct {
 	Publisher string `json:"publisher"`
 }
 
+type Student struct {
+	Email string `json:"email"`
+}
+
+type Teacher struct {
+	Email string `json:"email"`
+}
+
 type Repository struct {
 	DB *gorm.DB
 }
 
 func (r *Repository) CreateBook(context *fiber.Ctx) error {
-	book := Book{}
 
-	err := context.BodyParser(&book)
+}
+
+func (r *Repository) RegisterStudent(context *fiber.Ctx) error {
+	student := Student{}
+
+	err := context.BodyParser(&student)
 
 	if err != nil {
 		context.Status(http.StatusUnprocessableEntity).JSON(
@@ -34,7 +46,7 @@ func (r *Repository) CreateBook(context *fiber.Ctx) error {
 		return err
 	}
 
-	err = r.DB.Create(&book).Error
+	err = r.DB.Create(&student).Error
 	if err != nil {
 		context.Status(http.StatusBadRequest).JSON(
 			&fiber.Map{"message": "could not create book"})
@@ -116,6 +128,7 @@ func (r *Repository) GetBookByID(context *fiber.Ctx) error {
 func (r *Repository) SetupRoutes(app *fiber.App) {
 	api := app.Group("/api")
 	api.Post("/create_books", r.CreateBook)
+	api.Post("/register_student", r.RegisterStudent)
 	api.Delete("delete_book/:id", r.DeleteBook)
 	api.Get("/get_books/:id", r.GetBookByID)
 	api.Get("/books", r.GetBooks)
