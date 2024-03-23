@@ -31,10 +31,6 @@ type Repository struct {
 	DB *gorm.DB
 }
 
-func (r *Repository) CreateBook(context *fiber.Ctx) error {
-
-}
-
 func (r *Repository) RegisterStudent(context *fiber.Ctx) error {
 	student := Student{}
 
@@ -47,6 +43,29 @@ func (r *Repository) RegisterStudent(context *fiber.Ctx) error {
 	}
 
 	err = r.DB.Create(&student).Error
+	if err != nil {
+		context.Status(http.StatusBadRequest).JSON(
+			&fiber.Map{"message": "could not register student"})
+		return err
+	}
+
+	context.Status(http.StatusOK).JSON(&fiber.Map{
+		"message": "student has been registered"})
+	return nil
+}
+
+func (r *Repository) CreateBook(context *fiber.Ctx) error {
+	book := Book{}
+
+	err := context.BodyParser(&book)
+
+	if err != nil {
+		context.Status(http.StatusUnprocessableEntity).JSON(
+			&fiber.Map{"message": "request failed"})
+		return err
+	}
+
+	err = r.DB.Create(&book).Error
 	if err != nil {
 		context.Status(http.StatusBadRequest).JSON(
 			&fiber.Map{"message": "could not create book"})
@@ -128,7 +147,7 @@ func (r *Repository) GetBookByID(context *fiber.Ctx) error {
 func (r *Repository) SetupRoutes(app *fiber.App) {
 	api := app.Group("/api")
 	api.Post("/create_books", r.CreateBook)
-	api.Post("/register_student", r.RegisterStudent)
+	api.Post("/register_students", r.RegisterStudent)
 	api.Delete("delete_book/:id", r.DeleteBook)
 	api.Get("/get_books/:id", r.GetBookByID)
 	api.Get("/books", r.GetBooks)
