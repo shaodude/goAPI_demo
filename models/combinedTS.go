@@ -17,7 +17,7 @@ type Teacher struct {
 	Students []Student `gorm:"many2many:teacher_students"` // Many-to-many relationship with students
 }
 
-// MigrateTables function to migrate tables
+// migrate tables
 func MigrateTables(db *gorm.DB) error {
 	if err := db.AutoMigrate(&Teacher{}, &Student{}); err != nil {
 		return err

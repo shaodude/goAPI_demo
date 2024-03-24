@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// config object
 type Config struct {
 	Host     string
 	Port     string
@@ -16,6 +17,7 @@ type Config struct {
 	SSLMode  string
 }
 
+// create connection to database
 func NewConnection(config *Config) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
