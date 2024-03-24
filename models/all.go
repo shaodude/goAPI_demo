@@ -4,9 +4,10 @@ import "gorm.io/gorm"
 
 // Student struct representing a student
 type Student struct {
-	ID       uint      // Primary key (you may need to adjust this based on your database setup)
-	Email    string    `gorm:"unique"`                     // Unique constraint for email field
-	Teachers []Teacher `gorm:"many2many:teacher_students"` // Many-to-many relationship with teachers
+	ID        uint      // Primary key (you may need to adjust this based on your database setup)
+	Email     string    `gorm:"unique"`                     // Unique constraint for email field
+	Teachers  []Teacher `gorm:"many2many:teacher_students"` // Many-to-many relationship with teachers
+	Suspended bool      // Field to indicate if the student is suspended or not
 }
 
 // Teacher struct representing a teacher

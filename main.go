@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,12 +13,6 @@ import (
 	"github.com/shaodude/goAPI_demo/storage"
 	"gorm.io/gorm"
 )
-
-type Book struct {
-	Author    string `json:"author"`
-	Title     string `json:"title"`
-	Publisher string `json:"publisher"`
-}
 
 type Repository struct {
 	DB *gorm.DB
@@ -58,28 +53,42 @@ func (r *Repository) Register(context *fiber.Ctx) error {
 			return context.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to register student"})
 		}
 	}
-	context.Status(http.StatusOK).JSON(&fiber.Map{
+
+	return context.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "registered!"})
-	// Return success response
-	return nil
 }
 
 func (r *Repository) GetCommonStudents(context *fiber.Ctx) error {
 	// Parse query parameters to extract the list of teachers
 	teachers := context.Query("teacher")
+	fmt.Println(teachers)
 
 	// Split the list of teachers into individual email addresses
 	teacherList := strings.Split(teachers, ",")
-
+	fmt.Println(teacherList)
 	// Fetch students common to all the given teachers
 	var commonStudents []models.Student
-	if err := r.DB.
-		Joins("JOIN teacher_students ON students.id = teacher_students.student_id").
-		Joins("JOIN teachers ON teacher_students.teacher_id = teachers.id").
-		Where("teachers.email IN (?)", teacherList).
-		Group("students.id").
-		Having("COUNT(DISTINCT teachers.id) = ?", len(teacherList)).
-		Find(&commonStudents).Error; err != nil {
+
+	// Prepare the base query to join students and teachers
+	db := r.DB.Table("students")
+
+	// Join the teacher_students and teachers tables for each teacher in the list
+	for idx, teacherEmail := range teacherList {
+		db = db.Joins(fmt.Sprintf("JOIN teacher_students ts%d ON students.id = ts%d.student_id", idx, idx)).
+			Joins(fmt.Sprintf("JOIN teachers t%d ON ts%d.teacher_id = t%d.id", idx, idx, idx)).
+			Where(fmt.Sprintf("t%d.email = ?", idx), teacherEmail)
+	}
+
+	// Group the results by student ID and ensure each student is associated with all teachers
+	groupConditions := make([]string, len(teacherList))
+	for idx := range teacherList {
+		groupConditions[idx] = fmt.Sprintf("COUNT(DISTINCT t%d.id) = 1", idx)
+	}
+	groupCondition := strings.Join(groupConditions, " AND ")
+	db = db.Group("students.id").Having(groupCondition)
+
+	// Execute the query
+	if err := db.Find(&commonStudents).Error; err != nil {
 		return context.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to retrieve common students"})
 	}
 
@@ -89,14 +98,8 @@ func (r *Repository) GetCommonStudents(context *fiber.Ctx) error {
 		studentEmails = append(studentEmails, student.Email)
 	}
 
-	// // Return success response with list of common students
-	// return context.JSON(fiber.Map{"students": studentEmails})
-
-	context.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "books fetched successfully",
-		"data":    studentEmails,
-	})
-	return nil
+	// Return success response with list of common students
+	return context.Status(http.StatusOK).JSON(fiber.Map{"students": studentEmails})
 }
 
 func (r *Repository) SetupRoutes(app *fiber.App) {
