@@ -1,12 +1,13 @@
 # Golang API Assessment by Shao Yi Goh
+A backend application developed using Golang for backend code and PostgreSQL for database. The application is a part of a system for administrative functions by teachers for their students.
 
-## Abstract
+# Abstract:
 While my working exposure in backend development primarily involves PHP using the Laravel Framework, I've ventured into learning Golang specifically for this assessment. Given the time constraints, the project's capabilities are currently limited. However, potential enhancements are outlined below in the "Future Enhancements" section.
 
-# Future Enhancements
-1) Refactor code and restructure project directories to improve code readbility, maintainability, and scalability
-2) Rectify unit tests and expand test coverage with additional test cases.
-3) Explore the utilization of complex queries in API logic to optimize runtime and memory usage. Further testing will be necessary to validate these improvements.
+# Future Enhancements:
+  - Refactor code and restructure project directories to improve code readbility, maintainability, and scalability
+  - Rectify unit tests and expand test coverage with additional test cases.
+  - Explore the utilization of complex queries in API logic to optimize runtime and memory usage. Further testing will be necessary to validate these improvements.
 
 # Prerequisites:
   - Go (developed on version 1.22.1)
