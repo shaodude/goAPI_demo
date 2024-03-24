@@ -150,6 +150,11 @@ func (r *Repository) SuspendStudent(context *fiber.Ctx) error {
 		return context.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "student not found"})
 	}
 
+	// check if student is already suspended
+	if student.Suspended {
+		return context.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "student is already suspended"})
+	}
+
 	// suspend student
 	student.Suspended = true
 	if err := r.DB.Save(&student).Error; err != nil {
