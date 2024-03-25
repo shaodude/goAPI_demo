@@ -36,6 +36,8 @@ DB_SSLMODE=disable
 
 Replace the values with your database credentials.
 
+Note that you may need to create a new DB if there is not one available. This can be done using a PostgreSQL management tool like PGadmin4.
+
 ## Run Project
 
 ```sh
